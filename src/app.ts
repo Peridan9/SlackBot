@@ -1,5 +1,7 @@
 import { App } from '@slack/bolt';
 import dotenv from 'dotenv';
+import { registerMessageHandlers } from './handlers/messages';
+import { registerEventHandlers } from './handlers/events';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -13,37 +15,41 @@ const app = new App({
 });
 
 // ============================================
-// STEP 1: Simple Hello Bot
+// Start the Bot
 // ============================================
 
-// Respond to messages containing "hello"
-app.message('hello', async ({ message, say }) => {
-  // TypeScript type guard to ensure message has a user property
-  if ('user' in message) {
-    await say(`Hello <@${message.user}>! 👋 Nice to meet you!`);
-  }
-});
-
-// Respond when someone mentions the bot with @BotName
-app.event('app_mention', async ({ event, say }) => {
-  await say({
-    text: `Hi there <@${event.user}>! You mentioned me. How can I help?`,
-    thread_ts: event.ts, // Reply in a thread to keep channel clean
-  });
-});
-
-// ============================================
-// Start the bot
-// ============================================
 (async () => {
   try {
+    // Start the app first
     const port = Number(process.env.PORT) || 3000;
     await app.start(port);
+    
     console.log('⚡️ Slack bot is running!');
+    
+    // ============================================
+    // Auto-detect Bot User ID
+    // ============================================
+    
+    // Call auth.test to get bot's user ID automatically
+    const authTest = await app.client.auth.test();
+    const botUserId = authTest.user_id as string;
+    const botName = authTest.user as string;
+    
+    console.log(`🤖 Bot User ID: ${botUserId}`);
+    console.log(`📛 Bot Name: ${botName}`);
+    
+    // ============================================
+    // Register All Handlers (with bot info)
+    // ============================================
+    
+    registerMessageHandlers(app);
+    registerEventHandlers(app, botUserId);
+    
+    console.log('📂 Project structure: organized and modular');
     console.log('👋 Try sending "hello" in a channel where the bot is added');
+    console.log('➕ Or invite the bot to a channel to see the welcome message!');
   } catch (error) {
-    console.error('Failed to start the bot:', error);
+    console.error('❌ Failed to start the bot:', error);
     process.exit(1);
   }
 })();
-
