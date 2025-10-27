@@ -2,9 +2,13 @@
 
 export interface ChannelConfig {
   channelId: string;
+  channelName?: string; // Optional: Store channel name for easier reference
   reportFormat: string[];
-  users: string[];
-  reportTime: string; // Format: "HH:MM" (e.g., "09:00")
+  users: string[]; // Array of user IDs to monitor
+  reminderTime: string; // Format: "HH:MM" (e.g., "09:00") - When to ask for reports
+  reportTime: string; // Format: "HH:MM" (e.g., "17:00") - When to publish reports
+  createdBy: string; // User ID of who set it up
+  createdAt: Date;
 }
 
 export interface DailyReport {
@@ -17,5 +21,6 @@ export interface DailyReport {
 export interface UserReportStatus {
   userId: string;
   hasSubmitted: boolean;
+  dmThreadTs?: string; // For tracking DM conversation
 }
 
