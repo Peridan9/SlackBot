@@ -1,0 +1,25 @@
+{
+  "name": "slackbot",
+  "version": "1.0.0",
+  "description": "A Slack bot for daily reports - built with TypeScript",
+  "main": "dist/app.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/app.js",
+    "dev": "tsx src/app.ts",
+    "watch": "tsc --watch"
+  },
+  "keywords": ["slack", "bot", "typescript"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@slack/bolt": "^3.17.1",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}
+
