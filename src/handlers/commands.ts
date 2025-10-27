@@ -1,16 +1,13 @@
 import { App } from '@slack/bolt';
 import { getChannelConfig } from '../storage/memory';
-import { ChannelConfig } from '../types';
-
-// Temporary storage for setup flows (in-memory Map)
-const setupFlows = new Map<string, Partial<ChannelConfig>>();
+import { buildSetupModal } from '../modals/setupModal';
 
 export const registerCommandHandlers = (app: App): void => {
 
   // ============================================
-  // STEP 2: /setup Command (Channel-Based)
+  // /setup Command - Opens Setup Modal
   // ============================================
-  app.command('/setup', async ({ command, ack, say, client }) => {
+  app.command('/setup', async ({ command, ack, body, client }) => {
     await ack();
 
     const userId = command.user_id;
@@ -18,7 +15,9 @@ export const registerCommandHandlers = (app: App): void => {
 
     // Check if command was run in a channel (not DM)
     if (!channelId.startsWith('C') && !channelId.startsWith('G')) {
-      await say({
+      await client.chat.postEphemeral({
+        channel: channelId,
+        user: userId,
         text: '❌ Please run `/setup` from a channel where you want to configure daily reports, not in a DM!',
       });
       return;
@@ -27,7 +26,9 @@ export const registerCommandHandlers = (app: App): void => {
     // Check if channel is already configured
     const existingConfig = getChannelConfig(channelId);
     if (existingConfig) {
-      await say({
+      await client.chat.postEphemeral({
+        channel: channelId,
+        user: userId,
         text: `⚠️ This channel is already configured!\n\nUse \`/configure\` to modify settings.`,
       });
       return;
@@ -41,47 +42,32 @@ export const registerCommandHandlers = (app: App): void => {
       
       const channelName = channelInfo.channel?.name || 'unknown';
 
-      await say({
-        text: `⚙️ <@${userId}> is setting up daily reports for <#${channelId}>!\n\nCheck your DMs for the setup wizard. 🧙‍♂️`,
+      // Open the setup modal using our modal builder!
+      await client.views.open({
+        trigger_id: body.trigger_id, // CRITICAL: Must use trigger_id from body
+        view: buildSetupModal(channelId, channelName, userId)
       });
 
-      // Start setup flow in DM (without metadata - keeping it simple!)
-      await client.chat.postMessage({
-        channel: userId,
-        text: `👋 Let's set up daily reports for *#${channelName}*!\n\n` +
-              `I'll ask you a few questions:\n` +
-              `1️⃣ Which users should submit reports?\n` +
-              `2️⃣ What time should I remind them?\n` +
-              `3️⃣ What time should I publish the reports?\n\n` +
-              `Let's start! 🚀\n\n` +
-              `*Step 1 of 3: Users to Monitor*\n` +
-              `Please reply with user mentions.\n` +
-              `Example: \`@user1 @user2 @user3\``
-      });
-
-      // Store initial setup state in memory
-      setupFlows.set(userId, {
-        channelId: channelId,
-        channelName: channelName,
-        createdBy: userId,
-      });
-
-      console.log(`✅ Setup initiated by ${userId} for channel ${channelId} (#${channelName})`);
+      console.log(`✅ Opened setup modal for ${userId} in channel ${channelId} (#${channelName})`);
     } catch (error) {
-      console.error('❌ Error in /setup command:', error);
-      await say({
-        text: `Sorry <@${userId}>, something went wrong. Make sure I have access to this channel!`,
+      console.error('❌ Error opening modal:', error);
+      await client.chat.postEphemeral({
+        channel: channelId,
+        user: userId,
+        text: `❌ Sorry <@${userId}>, something went wrong. Make sure I have access to this channel!`,
       });
     }
   });
 
   // ============================================
-  // STEP 4: /configure Command (Coming Soon!)
+  // /configure Command (Coming Soon!)
   // ============================================
-  app.command('/configure', async ({ command, ack, say }) => {
+  app.command('/configure', async ({ command, ack, client }) => {
     await ack();
     
-    await say({
+    await client.chat.postEphemeral({
+      channel: command.channel_id,
+      user: command.user_id,
       text: `🚧 The \`/configure\` command is coming soon!\n\n` +
             `It will let you:\n` +
             `• View all configured channels\n` +
@@ -90,6 +76,3 @@ export const registerCommandHandlers = (app: App): void => {
     });
   });
 };
-
-// Export setupFlows for use in message handlers (Step 3)
-export { setupFlows };

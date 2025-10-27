@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import { registerMessageHandlers } from './handlers/messages';
 import { registerEventHandlers } from './handlers/events';
 import { registerCommandHandlers } from './handlers/commands';
+import { registerViewHandlers } from './handlers/views';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -46,10 +47,12 @@ const app = new App({
     registerMessageHandlers(app);
     registerEventHandlers(app, botUserId);
     registerCommandHandlers(app);
+    registerViewHandlers(app);
     
     console.log('📂 Project structure: organized and modular');
     console.log('👋 Try sending "hello" in a channel where the bot is added');
     console.log('➕ Or invite the bot to a channel to see the welcome message!');
+    console.log('⚙️  Use /setup in a channel to configure daily reports');
   } catch (error) {
     console.error('❌ Failed to start the bot:', error);
     process.exit(1);
