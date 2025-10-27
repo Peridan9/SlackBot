@@ -2,6 +2,7 @@ import { App } from '@slack/bolt';
 import dotenv from 'dotenv';
 import { registerMessageHandlers } from './handlers/messages';
 import { registerEventHandlers } from './handlers/events';
+import { registerCommandHandlers } from './handlers/commands';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -44,6 +45,7 @@ const app = new App({
     
     registerMessageHandlers(app);
     registerEventHandlers(app, botUserId);
+    registerCommandHandlers(app);
     
     console.log('📂 Project structure: organized and modular');
     console.log('👋 Try sending "hello" in a channel where the bot is added');
