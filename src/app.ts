@@ -4,6 +4,7 @@ import { registerMessageHandlers } from './handlers/messages';
 import { registerEventHandlers } from './handlers/events';
 import { registerCommandHandlers } from './handlers/commands';
 import { registerViewHandlers } from './handlers/views';
+import { startScheduler } from './scheduler';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -48,6 +49,12 @@ const app = new App({
     registerEventHandlers(app, botUserId);
     registerCommandHandlers(app);
     registerViewHandlers(app);
+    
+    // ============================================
+    // Start Scheduler
+    // ============================================
+    
+    startScheduler(app);
     
     console.log('📂 Project structure: organized and modular');
     console.log('👋 Try sending "hello" in a channel where the bot is added');
