@@ -1,5 +1,10 @@
 // Setup modal builder
 // This function creates the modal view for configuring daily reports
+export interface SetupModalMetadata {
+  channelId: string;
+  channelName: string;
+  createdBy: string;
+}
 
 export function buildSetupModal(
   channelId: string,

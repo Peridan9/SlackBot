@@ -2,11 +2,15 @@
 
 A TypeScript Slack bot for collecting and posting daily reports.
 
-## 🎯 Current Status: Step 1 - Hello Bot
+## 🎯 Current Status: Setup & Configuration Complete
 
 Right now, this bot can:
 - ✅ Respond with "hello" when someone sends a message containing "hello"
 - ✅ Respond when mentioned with @BotName
+- ✅ Send welcome message when added to a channel
+- ✅ `/setup` command - Configure daily reports via modal
+- ✅ Store channel configurations in memory
+- ✅ Type-safe modal handling with proper validation
 
 ## 🚀 Setup Instructions
 
@@ -84,13 +88,28 @@ npm start
 2. Send a message: `hello`
 3. The bot should respond: `Hello @you! 👋 Nice to meet you!`
 4. Or mention it: `@YourBotName`
+5. Try `/setup` in a channel to configure daily reports
 
 ## 📝 Next Steps
 
-- [ ] Step 2: Add a command to prompt users for daily reports
-- [ ] Step 3: Store reports temporarily
-- [ ] Step 4: Post collected reports at end of day
-- [ ] Step 5: Add scheduling and persistence
+### Phase 1: Scheduler & Core Functionality
+- [ ] Build scheduler infrastructure
+- [ ] Send daily reminders to monitored users
+- [ ] Collect user report submissions
+- [ ] Publish daily reports to configured channels
+
+### Phase 2: Management UI (Home Tab)
+- [ ] Create Home Tab dashboard
+- [ ] View all configured channels
+- [ ] Edit channel settings
+- [ ] View report history
+- [ ] Better UX than slash commands
+
+### Phase 3: Enhancements
+- [ ] Persistent storage (database/file-based)
+- [ ] Timezone support
+- [ ] Custom report questions
+- [ ] Analytics and insights
 
 ## 🛠️ Development
 

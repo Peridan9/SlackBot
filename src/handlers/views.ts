@@ -2,6 +2,8 @@
 import { App } from '@slack/bolt';
 import { saveChannelConfig } from '../storage/memory';
 import { ChannelConfig } from '../types';
+import { SetupModalMetadata } from '../modals/setupModal';
+
 
 export const registerViewHandlers = (app: App): void => {
 
@@ -14,15 +16,27 @@ export const registerViewHandlers = (app: App): void => {
 
     try {
       // Extract metadata (channel info we stored when opening modal)
-      const metadata = JSON.parse(view.private_metadata);
+      const metadata = JSON.parse(view.private_metadata) as SetupModalMetadata;
       const { channelId, channelName, createdBy } = metadata;
 
       // Extract user inputs from the modal
       const values = view.state.values;
       
-      const selectedUsers = values.users_block.users_select.selected_users;
-      const reminderTime = values.reminder_time_block.reminder_time_select.selected_time;
-      const reportTime = values.report_time_block.report_time_select.selected_time;
+      // Type-safe extraction with proper checks
+      const selectedUsers = values.users_block?.users_select?.selected_users;
+      const reminderTime = values.reminder_time_block?.reminder_time_select?.selected_time;
+      const reportTime = values.report_time_block?.report_time_select?.selected_time;
+
+      // Validate that all required fields are present
+      if (!selectedUsers || selectedUsers.length === 0) {
+        throw new Error('No users selected');
+      }
+      if (!reminderTime) {
+        throw new Error('Reminder time not selected');
+      }
+      if (!reportTime) {
+        throw new Error('Report time not selected');
+      }
 
       // Create the configuration object
       const config: ChannelConfig = {

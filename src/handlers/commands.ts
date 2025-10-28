@@ -29,7 +29,7 @@ export const registerCommandHandlers = (app: App): void => {
       await client.chat.postEphemeral({
         channel: channelId,
         user: userId,
-        text: `⚠️ This channel is already configured!\n\nUse \`/configure\` to modify settings.`,
+        text: `⚠️ This channel is already configured!\n\nVisit the bot's Home tab to view and modify settings.`,
       });
       return;
     }
@@ -59,20 +59,6 @@ export const registerCommandHandlers = (app: App): void => {
     }
   });
 
-  // ============================================
-  // /configure Command (Coming Soon!)
-  // ============================================
-  app.command('/configure', async ({ command, ack, client }) => {
-    await ack();
-    
-    await client.chat.postEphemeral({
-      channel: command.channel_id,
-      user: command.user_id,
-      text: `🚧 The \`/configure\` command is coming soon!\n\n` +
-            `It will let you:\n` +
-            `• View all configured channels\n` +
-            `• Edit users to monitor\n` +
-            `• Change reminder and report times`,
-    });
-  });
+  // Future commands will go here...
+  // (Home Tab will handle configuration management)
 };
