@@ -72,6 +72,17 @@ export const isChannelConfigured = (channelId: string): boolean => {
   return channelConfigs.has(channelId);
 };
 
+/**
+ * Get all channels that a specific user is configured to report to
+ * Note: This uses O(n) search through all configs. For production, consider
+ * maintaining a separate user-to-channels Map for O(1) lookup.
+ */
+export const getChannelsForUser = (userId: string): ChannelConfig[] => {
+  return Array.from(channelConfigs.values()).filter(config => 
+    config.users.includes(userId)
+  );
+};
+
 export const getStorageStats = () => {
   return {
     totalChannels: channelConfigs.size,

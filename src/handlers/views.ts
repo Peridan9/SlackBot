@@ -1,8 +1,9 @@
 // View handlers (modals, App Home, etc.)
 import { App } from '@slack/bolt';
-import { saveChannelConfig } from '../storage/memory';
-import { ChannelConfig } from '../types';
+import { saveChannelConfig, saveDailyReport, getChannelConfig } from '../storage/memory';
+import { ChannelConfig, DailyReport } from '../types';
 import { SetupModalMetadata } from '../modals/setupModal';
+import { ReportModalMetadata } from '../modals/reportModal';
 
 
 export const registerViewHandlers = (app: App): void => {
@@ -82,6 +83,79 @@ export const registerViewHandlers = (app: App): void => {
         await client.chat.postMessage({
           channel: body.user.id,
           text: '❌ Sorry, something went wrong while saving your configuration. Please try again.'
+        });
+      } catch (dmError) {
+        console.error('❌ Could not send error DM:', dmError);
+      }
+    }
+  });
+
+  // ============================================
+  // Handle Report Modal Submission
+  // ============================================
+  app.view('report_modal_submit', async ({ ack, body, view, client }) => {
+    // Acknowledge the submission immediately
+    await ack();
+
+    try {
+      // Extract metadata (user info we stored when opening modal)
+      const metadata = JSON.parse(view.private_metadata) as ReportModalMetadata;
+      const userId = metadata.userId;
+
+      // Extract user inputs from the modal
+      const values = view.state.values;
+      
+      // Type-safe extraction with proper checks
+      const selectedChannelId = values.channel_block?.channel_select?.selected_option?.value;
+      const reportText = values.report_block?.report_input?.value;
+
+      // Validate that all required fields are present
+      if (!selectedChannelId) {
+        throw new Error('No channel selected');
+      }
+      if (!reportText || reportText.trim().length === 0) {
+        throw new Error('Report text is empty');
+      }
+
+      // Get the channel config to get channel name
+      const channelConfig = getChannelConfig(selectedChannelId);
+      if (!channelConfig) {
+        throw new Error('Channel configuration not found');
+      }
+
+      // Get user info for the report
+      const userInfo = await client.users.info({ user: userId });
+      const userName = userInfo.user?.real_name || userInfo.user?.name || 'Unknown User';
+
+      // Create the report object
+      const report: DailyReport = {
+        userId,
+        userName,
+        report: reportText.trim(),
+        timestamp: new Date()
+      };
+
+      // Save the report!
+      saveDailyReport(selectedChannelId, report);
+
+      // Send confirmation DM to the user
+      await client.chat.postMessage({
+        channel: userId,
+        text: `✅ *Report submitted successfully!*\n\n` +
+              `📍 *Channel:* <#${selectedChannelId}> (#${channelConfig.channelName})\n` +
+              `📝 *Your report:*\n${reportText}\n\n` +
+              `Your report will be published in the channel at ${channelConfig.reportTime}. 🎉`
+      });
+
+      console.log(`✅ Report submitted by ${userName} (${userId}) for channel ${selectedChannelId} (#${channelConfig.channelName})`);
+    } catch (error) {
+      console.error('❌ Error handling report submission:', error);
+      
+      // Try to notify the user of the error
+      try {
+        await client.chat.postMessage({
+          channel: body.user.id,
+          text: '❌ Sorry, something went wrong while submitting your report. Please try again.'
         });
       } catch (dmError) {
         console.error('❌ Could not send error DM:', dmError);
