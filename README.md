@@ -182,15 +182,6 @@ src/
     └── index.ts           # Shared types
 ```
 
-## 🤝 Contributing
-
-This is a learning project following an incremental development approach:
-- Small, focused changes
-- Full understanding at each step
-- Clean code with proper separation of concerns
-
-For development documentation, see `DEVELOPMENT.md`, `TODO.md`, and `NOTES.md` (local only, not in repo).
-
 ## 📄 License
 
 ISC
