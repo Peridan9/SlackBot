@@ -28,19 +28,19 @@ export function startScheduler(app: App): void {
   // Schedule Jobs
   // ============================================
 
-  // Job 1: Send daily reminders (runs every hour)
-  // Checks if any channels are configured for the current hour
+  // Job 1: Send daily reminders (runs every 30 minutes)
+  // Checks if any channels are configured for the current time
   schedulerInstance.scheduleJob(
-    'hourly-reminders-check',
-    '* * * * *', // Every hour at minute 0
+    'reminders-check',
+    '*/30 * * * *', // Every 30 minutes (at :00 and :30)
     async () => await sendRemindersJob(app)
   );
 
-  // Job 2: Publish daily reports (runs every hour)
-  // Checks if any channels are configured for the current hour
+  // Job 2: Publish daily reports (runs every 30 minutes)
+  // Checks if any channels are configured for the current time
   schedulerInstance.scheduleJob(
-    'hourly-reports-check',
-    '* * * * *', // Every hour at minute 0
+    'reports-check',
+    '*/30 * * * *', // Every 30 minutes (at :00 and :30)
     async () => await publishReportsJob(app)
   );
 
@@ -48,8 +48,8 @@ export function startScheduler(app: App): void {
   console.log('📋 Active jobs:', schedulerInstance.getActiveJobs());
   console.log('');
   console.log('Cron Schedule:');
-  console.log('  • Reminders: Checked every hour');
-  console.log('  • Reports: Checked every hour');
+  console.log('  • Reminders: Checked every 30 minutes (:00, :30)');
+  console.log('  • Reports: Checked every 30 minutes (:00, :30)');
   console.log('');
 }
 

@@ -9,43 +9,44 @@ import { getAllChannelConfigs, getTodayReports, clearTodayReports } from '../../
  * This job runs every hour and checks which channels are configured for the current hour
  */
 export async function publishReportsJob(app: App): Promise<void> {
-  console.log('📊 Running daily reports publishing job...');
-
-  // Get current hour in HH:00 format
+  // Get current time in HH:MM format (rounded to nearest 30 minutes)
   const now = new Date();
   const currentHour = now.getHours().toString().padStart(2, '0');
-  const currentTime = `${currentHour}:00`;
-
-  console.log(`⏰ Current time check: ${currentTime}`);
+  const currentMinute = now.getMinutes() < 30 ? '00' : '30';
+  const currentTime = `${currentHour}:${currentMinute}`;
 
   // Get all channel configurations
   const configs = getAllChannelConfigs();
 
+  console.log(`📊 Reports Check | Time: ${currentTime} | Total configs: ${configs.length}`);
+
   if (configs.length === 0) {
-    console.log('📭 No channels configured yet');
+    console.log('   📭 No channels configured');
     return;
   }
 
-  // Filter to channels that have report publishing scheduled for this hour
+  // Filter to channels that have report publishing scheduled for this time
   const configsToProcess = configs.filter(config => {
-    // Extract hour from reportTime (e.g., "17:30" -> "17")
-    const [hour] = config.reportTime.split(':');
-    return hour === currentHour;
+    return config.reportTime === currentTime;
   });
 
   if (configsToProcess.length === 0) {
-    console.log(`📭 No reports scheduled for ${currentTime}`);
+    console.log(`   📭 No channels scheduled for this time`);
     return;
   }
 
-  console.log(`📤 Publishing reports for ${configsToProcess.length} channel(s)`);
+  console.log(`   📤 Publishing reports for ${configsToProcess.length} channel(s)...`);
+
+  // Track statistics
+  let published = 0;
+  let failed = 0;
+  let totalReports = 0;
 
   // Process each configured channel
   for (const config of configsToProcess) {
-    console.log(`  Processing channel: ${config.channelName} (${config.channelId})`);
-
-    // Get today's reports for this channel
     const reports = getTodayReports(config.channelId);
+    
+    console.log(`   ├─ Channel: #${config.channelName} | Reports: ${reports.length}/${config.users.length}`);
 
     try {
       if (reports.length === 0) {
@@ -56,7 +57,6 @@ export async function publishReportsJob(app: App): Promise<void> {
                 `⚠️ No reports were submitted today.\n\n` +
                 `Expected reports from: ${config.users.map(u => `<@${u}>`).join(', ')}`
         });
-        console.log(`    ⚠️  No reports submitted for this channel`);
       } else {
         // Format and post the reports
         const reportBlocks = reports.map(report => 
@@ -79,17 +79,19 @@ export async function publishReportsJob(app: App): Promise<void> {
           channel: config.channelId,
           text: summaryText
         });
-        console.log(`    ✅ Published ${reports.length} report(s)`);
 
         // Clear today's reports after publishing
         clearTodayReports(config.channelId);
-        console.log(`    🗑️  Cleared today's reports`);
+        totalReports += reports.length;
       }
+      published++;
     } catch (error) {
-      console.error(`    ❌ Failed to publish reports for channel ${config.channelId}:`, error);
+      console.error(`   │  ❌ Failed to publish:`, error instanceof Error ? error.message : error);
+      failed++;
     }
   }
 
-  console.log('✅ Reports publishing job completed');
+  // Summary
+  console.log(`   └─ Summary: ${published} published, ${failed} failed | Total reports: ${totalReports}`);
 }
 

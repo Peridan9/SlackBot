@@ -22,14 +22,44 @@ export class CronScheduler implements IScheduler {
       this.stopJob(name);
     }
 
-    // Create the scheduled task with error handling
+    // Create the scheduled task with error handling and timing
     const task = cron.schedule(cronTime, async () => {
-      console.log(`🔄 Running scheduled job: ${name}`);
+      const startTime = Date.now();
+      const timestamp = new Date().toISOString();
+      
+      console.log(`\n${'='.repeat(60)}`);
+      console.log(`🔄 [${timestamp}] Starting job: ${name}`);
+      console.log(`${'='.repeat(60)}`);
+      
       try {
         await callback();
-        console.log(`✅ Job '${name}' completed successfully`);
+        
+        const duration = Date.now() - startTime;
+        const durationStr = duration > 1000 
+          ? `${(duration / 1000).toFixed(2)}s` 
+          : `${duration}ms`;
+        
+        console.log(`${'='.repeat(60)}`);
+        console.log(`✅ [${new Date().toISOString()}] Job '${name}' completed`);
+        console.log(`⏱️  Execution time: ${durationStr}`);
+        
+        // Warn if job takes too long
+        if (duration > 5000) {
+          console.warn(`⚠️  WARNING: Job took longer than 5 seconds!`);
+        }
+        
+        console.log(`${'='.repeat(60)}\n`);
       } catch (error) {
-        console.error(`❌ Error in job '${name}':`, error);
+        const duration = Date.now() - startTime;
+        const durationStr = duration > 1000 
+          ? `${(duration / 1000).toFixed(2)}s` 
+          : `${duration}ms`;
+        
+        console.log(`${'='.repeat(60)}`);
+        console.error(`❌ [${new Date().toISOString()}] Job '${name}' FAILED`);
+        console.error(`⏱️  Execution time before error: ${durationStr}`);
+        console.error(`💥 Error:`, error);
+        console.log(`${'='.repeat(60)}\n`);
       }
     });
 

@@ -9,40 +9,41 @@ import { getAllChannelConfigs } from '../../storage/memory';
  * This job runs every hour and checks which channels are configured for the current hour
  */
 export async function sendRemindersJob(app: App): Promise<void> {
-  console.log('🔔 Running daily reminders job...');
-
-  // Get current hour in HH:00 format
+  // Get current time in HH:MM format (rounded to nearest 30 minutes)
   const now = new Date();
   const currentHour = now.getHours().toString().padStart(2, '0');
-  const currentTime = `${currentHour}:00`;
-
-  console.log(`⏰ Current time check: ${currentTime}`);
+  const currentMinute = now.getMinutes() < 30 ? '00' : '30';
+  const currentTime = `${currentHour}:${currentMinute}`;
 
   // Get all channel configurations
   const configs = getAllChannelConfigs();
 
+  console.log(`🔔 Reminders Check | Time: ${currentTime} | Total configs: ${configs.length}`);
+
   if (configs.length === 0) {
-    console.log('📭 No channels configured yet');
+    console.log('   📭 No channels configured');
     return;
   }
 
-  // Filter to channels that have reminders scheduled for this hour
+  // Filter to channels that have reminders scheduled for this time
   const configsToProcess = configs.filter(config => {
-    // Extract hour from reminderTime (e.g., "09:30" -> "09")
-    const [hour] = config.reminderTime.split(':');
-    return hour === currentHour;
+    return config.reminderTime === currentTime;
   });
 
   if (configsToProcess.length === 0) {
-    console.log(`📭 No reminders scheduled for ${currentTime}`);
+    console.log(`   📭 No channels scheduled for this time`);
     return;
   }
 
-  console.log(`📨 Sending reminders for ${configsToProcess.length} channel(s)`);
+  console.log(`   📨 Processing ${configsToProcess.length} channel(s)...`);
+
+  // Track statistics
+  let remindersSent = 0;
+  let remindersFailed = 0;
 
   // Process each configured channel
   for (const config of configsToProcess) {
-    console.log(`  Processing channel: ${config.channelName} (${config.channelId})`);
+    console.log(`   ├─ Channel: #${config.channelName} | Users: ${config.users.length}`);
 
     // Send reminder to each monitored user
     for (const userId of config.users) {
@@ -55,13 +56,15 @@ export async function sendRemindersJob(app: App): Promise<void> {
                 `${config.reportFormat.map(q => `• ${q}`).join('\n')}\n\n` +
                 `Reply to this message with your update! 📝`
         });
-        console.log(`    ✅ Sent reminder to user ${userId}`);
+        remindersSent++;
       } catch (error) {
-        console.error(`    ❌ Failed to send reminder to user ${userId}:`, error);
+        console.error(`   │  ❌ Failed to DM user ${userId}:`, error instanceof Error ? error.message : error);
+        remindersFailed++;
       }
     }
   }
 
-  console.log('✅ Reminders job completed');
+  // Summary
+  console.log(`   └─ Summary: ${remindersSent} sent, ${remindersFailed} failed`);
 }
 
