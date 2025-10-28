@@ -6,3 +6,8 @@ dist/
 .vscode/
 .idea/
 
+# Development documentation (personal use, not for repo)
+DEVELOPMENT.md
+TODO.md
+NOTES.md
+

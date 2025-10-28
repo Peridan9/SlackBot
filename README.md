@@ -1,18 +1,45 @@
-# SlackBot
+# SlackBot - Daily Reports Automation
 
-A TypeScript Slack bot for collecting and posting daily reports.
+> ⚠️ **WORK IN PROGRESS** - This bot is currently under active development and not fully functional. See [Current Limitations](#-current-limitations) below.
 
-## 🎯 Current Status: Setup & Configuration Complete
+A TypeScript Slack bot for automating team daily reports with scheduled reminders and aggregated summaries.
 
-Right now, this bot can:
-- ✅ Respond with "hello" when someone sends a message containing "hello"
-- ✅ Respond when mentioned with @BotName
-- ✅ Send welcome message when added to a channel
-- ✅ `/setup` command - Configure daily reports via modal
-- ✅ Store channel configurations in memory
-- ✅ Type-safe modal handling with proper validation
+## 🎯 Current Status
+
+### ✅ Implemented Features
+
+**Infrastructure & Configuration:**
+- ✅ `/setup` command - Interactive modal for channel configuration
+- ✅ User selection, time pickers (supports :00 and :30 times)
+- ✅ In-memory storage for channel configurations
+- ✅ Type-safe modal handling with validation
+
+**Scheduler System:**
+- ✅ Cron-based job scheduler (runs every 30 minutes)
+- ✅ Abstraction layer for easy migration to production schedulers
+- ✅ Automated reminder delivery at configured times
+- ✅ Report aggregation framework (structure in place)
+- ✅ Performance monitoring with execution timing
+
+**Bot Features:**
+- ✅ Welcome messages when added to channels
+- ✅ Basic message and event handling
+- ✅ @mention responses
+
+### 🔴 Current Limitations
+
+**Critical Missing Feature:**
+- ❌ **No report submission handler** - Users receive reminders but cannot submit reports yet!
+- ❌ Report publishing shows "no reports" because submission isn't implemented
+
+**Known Issues:**
+- Log interleaving when jobs run simultaneously
+- Modal time picker only shows hourly options in dropdown (users can type :30 times)
+- Users in multiple channels get multiple reminder DMs
 
 ## 🚀 Setup Instructions
+
+> ⚠️ **Note:** The bot will start and send reminders, but users cannot submit reports yet (feature in progress).
 
 ### 1. Install Dependencies
 
@@ -61,14 +88,13 @@ npm install
 
 ### 4. Set Up Environment Variables
 
-```bash
-# Copy the example file
-cp .env.example .env
+Create a `.env` file in the project root:
 
-# Edit .env and add your actual tokens
-# SLACK_BOT_TOKEN=xoxb-your-actual-token
-# SLACK_APP_TOKEN=xapp-your-actual-token
-# SLACK_SIGNING_SECRET=your-actual-secret
+```bash
+SLACK_BOT_TOKEN=xoxb-your-actual-token
+SLACK_APP_TOKEN=xapp-your-actual-token
+SLACK_SIGNING_SECRET=your-actual-secret
+PORT=3000
 ```
 
 ### 5. Run the Bot
@@ -90,26 +116,31 @@ npm start
 4. Or mention it: `@YourBotName`
 5. Try `/setup` in a channel to configure daily reports
 
-## 📝 Next Steps
+## 🚧 What's Next
 
-### Phase 1: Scheduler & Core Functionality
-- [ ] Build scheduler infrastructure
-- [ ] Send daily reminders to monitored users
-- [ ] Collect user report submissions
-- [ ] Publish daily reports to configured channels
+### Immediate Priority (Core Functionality)
+1. **Report Submission Handler** - Allow users to submit reports via DM replies
+2. Add channel context to reminder messages (show which channel the report is for)
+3. Fix log interleaving (stagger job execution times)
 
-### Phase 2: Management UI (Home Tab)
-- [ ] Create Home Tab dashboard
-- [ ] View all configured channels
-- [ ] Edit channel settings
-- [ ] View report history
-- [ ] Better UX than slash commands
+### Phase 2: UX Improvements
+- Consolidated DMs for users in multiple channels
+- Improve modal time picker for :30 times
+- Report editing capability
+- "Skip today" option
 
-### Phase 3: Enhancements
-- [ ] Persistent storage (database/file-based)
-- [ ] Timezone support
-- [ ] Custom report questions
-- [ ] Analytics and insights
+### Phase 3: Management & Polish
+- Home Tab dashboard for configuration management
+- View/edit/delete channel configs
+- Report history viewer
+- Better error handling and user feedback
+
+### Phase 4: Production Ready
+- Persistent storage (PostgreSQL/MongoDB)
+- Timezone support per channel
+- Custom report questions
+- Analytics and insights
+- Comprehensive testing
 
 ## 🛠️ Development
 
@@ -121,6 +152,45 @@ npm start
 ## 📚 Tech Stack
 
 - **TypeScript** - Type-safe JavaScript
-- **Slack Bolt SDK** - Official Slack framework
+- **Slack Bolt SDK** - Official Slack framework for building bots
+- **node-cron** - Job scheduling with cron syntax
 - **Socket Mode** - No need for public URLs or webhooks
 - **dotenv** - Environment variable management
+
+## 📁 Project Structure
+
+```
+src/
+├── app.ts                 # Main entry point
+├── handlers/              # Event listeners
+│   ├── commands.ts        # Slash commands (/setup)
+│   ├── events.ts          # Slack events (mentions, joins)
+│   ├── messages.ts        # Message handlers
+│   └── views.ts           # Modal submissions
+├── modals/                # UI components
+│   └── setupModal.ts      # Setup configuration modal
+├── scheduler/             # Time-based automation
+│   ├── index.ts           # Scheduler entry point
+│   ├── scheduler.ts       # Scheduler interface (abstraction)
+│   ├── cronScheduler.ts   # node-cron implementation
+│   └── jobs/              # Scheduled jobs
+│       ├── sendReminders.ts
+│       └── publishReports.ts
+├── storage/               # Data layer
+│   └── memory.ts          # In-memory storage (temporary)
+└── types/                 # TypeScript definitions
+    └── index.ts           # Shared types
+```
+
+## 🤝 Contributing
+
+This is a learning project following an incremental development approach:
+- Small, focused changes
+- Full understanding at each step
+- Clean code with proper separation of concerns
+
+For development documentation, see `DEVELOPMENT.md`, `TODO.md`, and `NOTES.md` (local only, not in repo).
+
+## 📄 License
+
+ISC
