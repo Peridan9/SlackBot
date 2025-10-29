@@ -46,15 +46,18 @@ export async function sendRemindersJob(app: App): Promise<void> {
     console.log(`   ├─ Channel: #${config.channelName} | Users: ${config.users.length}`);
 
     // Send reminder to each monitored user
+    // TODO: Future enhancement - check if user already submitted report today
+    // to avoid sending unnecessary reminders
     for (const userId of config.users) {
       try {
         await app.client.chat.postMessage({
           channel: userId, // DM the user
           text: `👋 *Time for your daily report!*\n\n` +
-                `Please submit your report for <#${config.channelId}>.\n\n` +
+                `📍 *Channel:* <#${config.channelId}> (#${config.channelName})\n` +
+                `📊 *Report due by:* ${config.reportTime}\n\n` +
                 `*What to share:*\n` +
                 `${config.reportFormat.map(q => `• ${q}`).join('\n')}\n\n` +
-                `Reply to this message with your update! 📝`
+                `Use \`/report\` to submit your update! 📝`
         });
         remindersSent++;
       } catch (error) {
