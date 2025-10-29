@@ -1,5 +1,7 @@
 // Setup modal builder
 // This function creates the modal view for configuring daily reports
+import { ChannelConfig } from '../types';
+
 export interface SetupModalMetadata {
   channelId: string;
   channelName: string;
@@ -9,7 +11,8 @@ export interface SetupModalMetadata {
 export function buildSetupModal(
   channelId: string,
   channelName: string,
-  createdBy: string
+  createdBy: string,
+  existingConfig?: ChannelConfig  // Optional: for editing existing configs
 ) {
   return {
     type: 'modal' as const,
@@ -58,7 +61,8 @@ export function buildSetupModal(
           placeholder: {
             type: 'plain_text' as const,
             text: 'Choose users...'
-          }
+          },
+          ...(existingConfig?.users && { initial_users: existingConfig.users })
         }
       },
       // Input 2: Reminder time
@@ -72,7 +76,7 @@ export function buildSetupModal(
         element: {
           type: 'timepicker' as const,
           action_id: 'reminder_time_select',
-          initial_time: '09:00',
+          initial_time: existingConfig?.reminderTime || '09:00',
           placeholder: {
             type: 'plain_text' as const,
             text: 'Select time'
@@ -94,7 +98,7 @@ export function buildSetupModal(
         element: {
           type: 'timepicker' as const,
           action_id: 'report_time_select',
-          initial_time: '17:00',
+          initial_time: existingConfig?.reportTime || '17:00',
           placeholder: {
             type: 'plain_text' as const,
             text: 'Select time'

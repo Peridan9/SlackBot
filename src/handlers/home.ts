@@ -2,8 +2,10 @@
 // Displays a personalized dashboard for each user
 
 import { App } from '@slack/bolt';
-import { getAllChannelConfigs, getChannelsForUser, getTodayReports } from '../storage/memory';
+import { getAllChannelConfigs, getChannelsForUser, getTodayReports, getChannelConfig } from '../storage/memory';
 import { buildReportModal } from '../modals/reportModal';
+import { buildSetupModal } from '../modals/setupModal';
+import { buildDeleteConfirmModal } from '../modals/confirmDeleteModal';
 
 export const registerHomeTabHandler = (app: App): void => {
   
@@ -110,28 +112,69 @@ export const registerHomeTabHandler = (app: App): void => {
 
     try {
       if (actionType === 'edit') {
-        // TODO: Future - open edit modal with pre-filled values
-        await client.chat.postEphemeral({
-          channel: userId,
-          user: userId,
-          text: '✏️ *Edit Channel Configuration*\n\n' +
-                'This feature is coming soon! For now, you can:\n' +
-                '1. Delete the current configuration\n' +
-                '2. Run `/setup` again in the channel to create a new one'
+        // Fetch existing config
+        const config = getChannelConfig(channelId);
+        if (!config) {
+          await client.chat.postEphemeral({
+            channel: userId,
+            user: userId,
+            text: '❌ Configuration not found. It may have been deleted.'
+          });
+          console.log(`⚠️  Edit requested for channel ${channelId} but config not found`);
+          return;
+        }
+
+        // Get channel info for the modal
+        const channelInfo = await client.conversations.info({ channel: channelId });
+        const channelName = channelInfo.channel?.name || config.channelName || 'Unknown';
+
+        // Open setup modal with pre-filled values
+        await client.views.open({
+          trigger_id: (body as any).trigger_id,
+          view: buildSetupModal(
+            channelId,
+            channelName,
+            userId,  // Current user (not necessarily original creator)
+            config   // Pass existing config for pre-filling
+          )
         });
-        console.log(`ℹ️  Edit requested for channel ${channelId} by user ${userId} (not implemented yet)`);
+        console.log(`✏️  Opened edit modal for channel ${channelId} (#${channelName}) by user ${userId}`);
+
       } else if (actionType === 'delete') {
-        // TODO: Future - show delete confirmation modal
-        await client.chat.postEphemeral({
-          channel: userId,
-          user: userId,
-          text: '🗑️ *Delete Channel Configuration*\n\n' +
-                'This feature is coming soon! For now, the configuration will remain active.'
+        // Fetch existing config
+        const config = getChannelConfig(channelId);
+        if (!config) {
+          await client.chat.postEphemeral({
+            channel: userId,
+            user: userId,
+            text: '❌ Configuration not found. It may have been deleted.'
+          });
+          console.log(`⚠️  Delete requested for channel ${channelId} but config not found`);
+          return;
+        }
+
+        // Get channel name
+        const channelInfo = await client.conversations.info({ channel: channelId });
+        const channelName = channelInfo.channel?.name || config.channelName || 'Unknown';
+
+        // Open delete confirmation modal
+        await client.views.open({
+          trigger_id: (body as any).trigger_id,
+          view: buildDeleteConfirmModal(channelId, channelName)
         });
-        console.log(`ℹ️  Delete requested for channel ${channelId} by user ${userId} (not implemented yet)`);
+        console.log(`🗑️  Opened delete confirmation for channel ${channelId} (#${channelName}) by user ${userId}`);
       }
     } catch (error) {
       console.error('❌ Error handling channel action:', error);
+      try {
+        await client.chat.postEphemeral({
+          channel: userId,
+          user: userId,
+          text: '❌ Sorry, something went wrong. Please try again.'
+        });
+      } catch (dmError) {
+        console.error('❌ Could not send error message:', dmError);
+      }
     }
   });
 };
@@ -320,7 +363,7 @@ function buildHomeView(
   });
 
   return {
-    type: 'home',
+    type: 'home' as const,
     blocks: blocks
   };
 }

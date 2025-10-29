@@ -1,9 +1,10 @@
 // View handlers (modals, App Home, etc.)
 import { App } from '@slack/bolt';
-import { saveChannelConfig, saveDailyReport, getChannelConfig, getTodayReports } from '../storage/memory';
+import { saveChannelConfig, saveDailyReport, getChannelConfig, getTodayReports, deleteChannelConfig } from '../storage/memory';
 import { ChannelConfig, DailyReport } from '../types';
 import { SetupModalMetadata } from '../modals/setupModal';
 import { ReportModalMetadata } from '../modals/reportModal';
+import { DeleteModalMetadata } from '../modals/confirmDeleteModal';
 
 
 export const registerViewHandlers = (app: App): void => {
@@ -170,6 +171,57 @@ export const registerViewHandlers = (app: App): void => {
         await client.chat.postMessage({
           channel: body.user.id,
           text: '❌ Sorry, something went wrong while submitting your report. Please try again.'
+        });
+      } catch (dmError) {
+        console.error('❌ Could not send error DM:', dmError);
+      }
+    }
+  });
+
+  // ============================================
+  // Handle Delete Confirmation Modal Submission
+  // ============================================
+  app.view('delete_confirm_modal', async ({ ack, view, body, client }) => {
+    await ack();
+
+    try {
+      // Extract metadata (channel info we stored when opening modal)
+      const metadata = JSON.parse(view.private_metadata) as DeleteModalMetadata;
+      const { channelId, channelName } = metadata;
+      const userId = body.user.id;
+
+      // Delete the configuration
+      const deleted = deleteChannelConfig(channelId);
+
+      if (deleted) {
+        // Send success confirmation DM
+        await client.chat.postMessage({
+          channel: userId,
+          text: `✅ *Configuration deleted successfully!*\n\n` +
+                `The daily reports configuration for <#${channelId}> (#${channelName}) has been removed.\n\n` +
+                `• Reminders will no longer be sent\n` +
+                `• Reports will no longer be published\n\n` +
+                `You can set it up again anytime using \`/setup\` in the channel.`
+        });
+        console.log(`🗑️  Deleted config for channel ${channelId} (#${channelName}) by user ${userId}`);
+      } else {
+        // Configuration not found (edge case - might have been deleted by another admin)
+        await client.chat.postMessage({
+          channel: userId,
+          text: `⚠️ *Could not delete configuration*\n\n` +
+                `The configuration for <#${channelId}> (#${channelName}) was not found. ` +
+                `It may have already been deleted.`
+        });
+        console.log(`⚠️  Attempted to delete config for channel ${channelId} but it was not found`);
+      }
+
+      // Home Tab will auto-refresh after modal closes
+    } catch (error) {
+      console.error('❌ Error handling delete confirmation:', error);
+      try {
+        await client.chat.postMessage({
+          channel: body.user.id,
+          text: '❌ Sorry, something went wrong while deleting the configuration. Please try again.'
         });
       } catch (dmError) {
         console.error('❌ Could not send error DM:', dmError);
