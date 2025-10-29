@@ -90,6 +90,8 @@ export function buildReportModal(userId: string, channels: ChannelConfig[]) {
           type: 'plain_text_input' as const,
           action_id: 'report_input',
           multiline: true,
+          min_length: 10,
+          max_length: 1000,
           placeholder: {
             type: 'plain_text' as const,
             text: 'What did you work on today?\n\n• Task 1\n• Task 2\n• ...'

@@ -9,6 +9,7 @@ export class CronScheduler implements IScheduler {
 
   /**
    * Schedule a recurring job using cron syntax
+   * The job callback is responsible for ALL logging (headers, content, footers)
    */
   scheduleJob(name: string, cronTime: string, callback: () => Promise<void>): void {
     // Validate cron expression
@@ -22,44 +23,14 @@ export class CronScheduler implements IScheduler {
       this.stopJob(name);
     }
 
-    // Create the scheduled task with error handling and timing
+    // Create the scheduled task - SILENT wrapper, jobs handle their own logging
     const task = cron.schedule(cronTime, async () => {
-      const startTime = Date.now();
-      const timestamp = new Date().toISOString();
-      
-      console.log(`\n${'='.repeat(60)}`);
-      console.log(`🔄 [${timestamp}] Starting job: ${name}`);
-      console.log(`${'='.repeat(60)}`);
-      
       try {
+        // Run the job - it handles ALL output atomically
         await callback();
-        
-        const duration = Date.now() - startTime;
-        const durationStr = duration > 1000 
-          ? `${(duration / 1000).toFixed(2)}s` 
-          : `${duration}ms`;
-        
-        console.log(`${'='.repeat(60)}`);
-        console.log(`✅ [${new Date().toISOString()}] Job '${name}' completed`);
-        console.log(`⏱️  Execution time: ${durationStr}`);
-        
-        // Warn if job takes too long
-        if (duration > 5000) {
-          console.warn(`⚠️  WARNING: Job took longer than 5 seconds!`);
-        }
-        
-        console.log(`${'='.repeat(60)}\n`);
       } catch (error) {
-        const duration = Date.now() - startTime;
-        const durationStr = duration > 1000 
-          ? `${(duration / 1000).toFixed(2)}s` 
-          : `${duration}ms`;
-        
-        console.log(`${'='.repeat(60)}`);
-        console.error(`❌ [${new Date().toISOString()}] Job '${name}' FAILED`);
-        console.error(`⏱️  Execution time before error: ${durationStr}`);
-        console.error(`💥 Error:`, error);
-        console.log(`${'='.repeat(60)}\n`);
+        // Only log unhandled crashes (jobs should handle their own errors)
+        console.error(`\n💥 CRITICAL: Job '${name}' crashed unexpectedly:`, error);
       }
     });
 

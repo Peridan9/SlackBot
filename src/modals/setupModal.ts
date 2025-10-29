@@ -80,7 +80,7 @@ export function buildSetupModal(
         },
         hint: {
           type: 'plain_text' as const,
-          text: 'When to ask users for their daily reports'
+          text: 'When to ask users for their daily reports (💡 Tip: Type :30 for half-hour times)'
         }
       },
       // Input 3: Report publishing time
@@ -102,7 +102,7 @@ export function buildSetupModal(
         },
         hint: {
           type: 'plain_text' as const,
-          text: 'When to publish collected reports to the channel'
+          text: 'When to publish collected reports to the channel (💡 Tip: Type :30 for half-hour times)'
         }
       }
     ]

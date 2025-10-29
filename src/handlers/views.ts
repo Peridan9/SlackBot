@@ -117,6 +117,15 @@ export const registerViewHandlers = (app: App): void => {
         throw new Error('Report text is empty');
       }
 
+      // Backend validation for report length (security layer)
+      const trimmedReport = reportText.trim();
+      if (trimmedReport.length < 10) {
+        throw new Error('Report is too short. Please provide at least 10 characters.');
+      }
+      if (trimmedReport.length > 1000) {
+        throw new Error('Report is too long. Please limit to 1000 characters.');
+      }
+
       // Get the channel config to get channel name
       const channelConfig = getChannelConfig(selectedChannelId);
       if (!channelConfig) {
@@ -136,7 +145,7 @@ export const registerViewHandlers = (app: App): void => {
       const report: DailyReport = {
         userId,
         userName,
-        report: reportText.trim(),
+        report: trimmedReport,  // Use validated variable
         timestamp: new Date()
       };
 

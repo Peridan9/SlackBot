@@ -7,8 +7,12 @@ import { getAllChannelConfigs, getTodayReports, clearTodayReports } from '../../
 /**
  * Collect and publish daily reports to configured channels
  * This job runs every hour and checks which channels are configured for the current hour
+ * Handles ALL logging internally for atomic output
  */
 export async function publishReportsJob(app: App): Promise<void> {
+  const startTime = Date.now();
+  const timestamp = new Date().toISOString();
+  
   // Get current time in HH:MM format (rounded to nearest 30 minutes)
   const now = new Date();
   const currentHour = now.getHours().toString().padStart(2, '0');
@@ -18,10 +22,27 @@ export async function publishReportsJob(app: App): Promise<void> {
   // Get all channel configurations
   const configs = getAllChannelConfigs();
 
-  console.log(`📊 Reports Check | Time: ${currentTime} | Total configs: ${configs.length}`);
+  // Buffer ALL logs for atomic output
+  const logs: string[] = [];
+  
+  // Header
+  logs.push('');
+  logs.push('='.repeat(60));
+  logs.push(`🔄 [${timestamp}] Starting job: reports-check`);
+  logs.push('-'.repeat(60));
+  logs.push(`📊 Reports Check | Time: ${currentTime} | Total configs: ${configs.length}`);
 
   if (configs.length === 0) {
-    console.log('   📭 No channels configured');
+    logs.push('   📭 No channels configured');
+    
+    // Footer
+    logs.push('-'.repeat(60));
+    logs.push(`✅ [${new Date().toISOString()}] Job completed`);
+    logs.push(`⏱️  Execution time: ${Date.now() - startTime}ms`);
+    logs.push('='.repeat(60));
+    logs.push('');
+    
+    console.log(logs.join('\n'));
     return;
   }
 
@@ -31,11 +52,20 @@ export async function publishReportsJob(app: App): Promise<void> {
   });
 
   if (configsToProcess.length === 0) {
-    console.log(`   📭 No channels scheduled for this time`);
+    logs.push(`   📭 No channels scheduled for this time`);
+    
+    // Footer
+    logs.push('-'.repeat(60));
+    logs.push(`✅ [${new Date().toISOString()}] Job completed`);
+    logs.push(`⏱️  Execution time: ${Date.now() - startTime}ms`);
+    logs.push('='.repeat(60));
+    logs.push('');
+    
+    console.log(logs.join('\n'));
     return;
   }
 
-  console.log(`   📤 Publishing reports for ${configsToProcess.length} channel(s)...`);
+  logs.push(`   📤 Publishing reports for ${configsToProcess.length} channel(s)...`);
 
   // Track statistics
   let published = 0;
@@ -46,7 +76,7 @@ export async function publishReportsJob(app: App): Promise<void> {
   for (const config of configsToProcess) {
     const reports = getTodayReports(config.channelId);
     
-    console.log(`   ├─ Channel: #${config.channelName} | Reports: ${reports.length}/${config.users.length}`);
+    logs.push(`   ├─ Channel: #${config.channelName} | Reports: ${reports.length}/${config.users.length}`);
 
     try {
       if (reports.length === 0) {
@@ -86,12 +116,30 @@ export async function publishReportsJob(app: App): Promise<void> {
       }
       published++;
     } catch (error) {
-      console.error(`   │  ❌ Failed to publish:`, error instanceof Error ? error.message : error);
+      logs.push(`   │  ❌ Failed to publish: ${error instanceof Error ? error.message : error}`);
       failed++;
     }
   }
 
   // Summary
-  console.log(`   └─ Summary: ${published} published, ${failed} failed | Total reports: ${totalReports}`);
+  logs.push(`   └─ Summary: ${published} published, ${failed} failed | Total reports: ${totalReports}`);
+  
+  // Footer
+  const duration = Date.now() - startTime;
+  const durationStr = duration > 1000 ? `${(duration / 1000).toFixed(2)}s` : `${duration}ms`;
+  
+  logs.push('-'.repeat(60));
+  logs.push(`✅ [${new Date().toISOString()}] Job completed`);
+  logs.push(`⏱️  Execution time: ${durationStr}`);
+  
+  if (duration > 5000) {
+    logs.push(`⚠️  WARNING: Job took longer than 5 seconds!`);
+  }
+  
+  logs.push('='.repeat(60));
+  logs.push('');
+  
+  // Output everything atomically
+  console.log(logs.join('\n'));
 }
 
