@@ -34,8 +34,17 @@ export const deleteChannelConfig = (channelId: string): boolean => {
 
 export const saveDailyReport = (channelId: string, report: DailyReport): void => {
   const reports = dailyReports.get(channelId) || [];
-  reports.push(report);
-  dailyReports.set(channelId, reports);
+  const today = new Date().toDateString();
+  
+  // Remove any existing report from this user today (to avoid duplicates)
+  const filteredReports = reports.filter(r => 
+    !(r.userId === report.userId && r.timestamp.toDateString() === today)
+  );
+  
+  // Add the new/updated report
+  filteredReports.push(report);
+  dailyReports.set(channelId, filteredReports);
+  
   console.log(`✅ Saved report from ${report.userName} for channel ${channelId}`);
 };
 

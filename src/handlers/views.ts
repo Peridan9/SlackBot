@@ -1,6 +1,6 @@
 // View handlers (modals, App Home, etc.)
 import { App } from '@slack/bolt';
-import { saveChannelConfig, saveDailyReport, getChannelConfig } from '../storage/memory';
+import { saveChannelConfig, saveDailyReport, getChannelConfig, getTodayReports } from '../storage/memory';
 import { ChannelConfig, DailyReport } from '../types';
 import { SetupModalMetadata } from '../modals/setupModal';
 import { ReportModalMetadata } from '../modals/reportModal';
@@ -123,6 +123,11 @@ export const registerViewHandlers = (app: App): void => {
         throw new Error('Channel configuration not found');
       }
 
+      // Check if user already submitted a report today (for better messaging)
+      const existingReports = getTodayReports(selectedChannelId);
+      const existingReport = existingReports.find(r => r.userId === userId);
+      const isUpdate = existingReport !== undefined;
+
       // Get user info for the report
       const userInfo = await client.users.info({ user: userId });
       const userName = userInfo.user?.real_name || userInfo.user?.name || 'Unknown User';
@@ -135,13 +140,13 @@ export const registerViewHandlers = (app: App): void => {
         timestamp: new Date()
       };
 
-      // Save the report!
+      // Save the report (will replace existing one if present)
       saveDailyReport(selectedChannelId, report);
 
       // Send confirmation DM to the user
       await client.chat.postMessage({
         channel: userId,
-        text: `✅ *Report submitted successfully!*\n\n` +
+        text: `✅ *Report ${isUpdate ? 'updated' : 'submitted'} successfully!*\n\n` +
               `📍 *Channel:* <#${selectedChannelId}> (#${channelConfig.channelName})\n` +
               `📝 *Your report:*\n${reportText}\n\n` +
               `Your report will be published in the channel at ${channelConfig.reportTime}. 🎉`

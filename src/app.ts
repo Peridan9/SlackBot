@@ -4,6 +4,7 @@ import { registerMessageHandlers } from './handlers/messages';
 import { registerEventHandlers } from './handlers/events';
 import { registerCommandHandlers } from './handlers/commands';
 import { registerViewHandlers } from './handlers/views';
+import { registerHomeTabHandler } from './handlers/home';
 import { startScheduler } from './scheduler';
 
 // Load environment variables from .env file
@@ -49,6 +50,7 @@ const app = new App({
     registerEventHandlers(app, botUserId);
     registerCommandHandlers(app);
     registerViewHandlers(app);
+    registerHomeTabHandler(app);
     
     // ============================================
     // Start Scheduler
